@@ -20,27 +20,27 @@
 //   sum[i] = p[i] ^ c[i]     (c0 = cin)
 
 module cla4(
-  input  [3:0] a,
-  input  [3:0] b,
-  input        cin,
-  output [3:0] sum,
-  output       cout
+    input  [3:0] a,
+    input  [3:0] b,
+    input        cin,
+    output [3:0] sum,
+    output       cout
 );
 
-  wire p0, p1, p2, p3;
-  wire g0, g1, g2, g3;
-  wire c1, c2, c3, c4;
+wire p0, p1, p2, p3;
+wire g0, g1, g2, g3;
 
-  // TODO: your gate-level P/G, carry, and sum logic goes here.
-  // (cout should be connected to c4.) Remember the delay on every gate.
+wire c1, c2, c3, c4;
 
-wire t20, t21;
-wire t30, t31, t32;
-wire t40, t41, t42, t43;
+wire t20, t21, t22;
+wire t30, t31, t32, t33;
+wire t40, t41, t42, t43, t44;
 
-wire s0, s1, s2, s3;
+wire c2_temp;
+wire c3_temp1, c3_temp2;
+wire c4_temp1, c4_temp2, c4_temp3;
 
-/* Propagate signals */
+/* Step 1: Propagate signals */
 xor #(2) (p0, a[0], b[0]);
 xor #(2) (p1, a[1], b[1]);
 xor #(2) (p2, a[2], b[2]);
@@ -52,48 +52,39 @@ and #(2) (g1, a[1], b[1]);
 and #(2) (g2, a[2], b[2]);
 and #(2) (g3, a[3], b[3]);
 
-/* C1 = G0 + P0 Cin */
-and #(2) (s0, p0, cin);
-or  #(2) (c1, g0, s0);
+/* Step 2: Carry equations */
 
-/* C2 = G1 + P1 G0 + P1 P0 Cin */
-and #(2) (t20, p1, g0);
-and #(2) (t21, p1, p0);
-and #(2) (s1, t21, cin);
+/* c1 = g0 + p0.cin */
+and #(2) (t20, p0, cin);
+or  #(2) (c1, g0, t20);
 
-or #(2) (c2, g1, t20);
-or #(2) (c2, c2, s1);
+/* c2 = g1 + p1.g0 + p1.p0.cin */
+and #(2) (t21, p1, g0);
+and #(2) (t22, p1, p0, cin);
+or  #(2) (c2, g1, t21, t22);
 
-/* C3 = G2 + P2 G1 + P2 P1 G0 + P2 P1 P0 Cin */
+/* c3 = g2 + p2.g1 + p2.p1.g0 + p2.p1.p0.cin */
 and #(2) (t30, p2, g1);
-and #(2) (t31, p2, p1);
-and #(2) (t32, t31, g0);
-and #(2) (s2, t31, p0);
-and #(2) (s2, s2, cin);
+and #(2) (t31, p2, p1, g0);
+and #(2) (t32, p2, p1, p0, cin);
+or  #(2) (c3, g2, t30, t31, t32);
 
-or #(2) (c3, g2, t30);
-or #(2) (c3, c3, t32);
-or #(2) (c3, c3, s2);
-
-/* C4 = G3 + P3G2 + P3P2G1 + P3P2P1G0 + P3P2P1P0Cin */
+/* c4 = g3 + p3.g2 + p3.p2.g1
+        + p3.p2.p1.g0 + p3.p2.p1.p0.cin */
 and #(2) (t40, p3, g2);
-and #(2) (t41, p3, p2);
-and #(2) (t42, t41, g1);
-and #(2) (t43, t41, p1);
-and #(2) (s3, t43, g0);
-and #(2) (s3, s3, p0);
-and #(2) (s3, s3, cin);
+and #(2) (t41, p3, p2, g1);
+and #(2) (t42, p3, p2, p1, g0);
+and #(2) (t43, p3, p2, p1, p0, cin);
 
-or #(2) (c4, g3, t40);
-or #(2) (c4, c4, t42);
-or #(2) (c4, c4, s3);
+or #(2) (c4, g3, t40, t41, t42, t43);
 
-/* Sum */
+/* Step 3: Sum */
 xor #(2) (sum[0], p0, cin);
 xor #(2) (sum[1], p1, c1);
 xor #(2) (sum[2], p2, c2);
 xor #(2) (sum[3], p3, c3);
 
+/* Final carry */
 assign cout = c4;
 
 endmodule
