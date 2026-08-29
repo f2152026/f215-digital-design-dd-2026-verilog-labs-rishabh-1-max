@@ -10,6 +10,9 @@
 // cla64_flat.v
 // Flat, unblocked 64-bit carry-lookahead adder
 
+// cla64_flat.v
+// Flat 64-bit Carry Lookahead Adder
+
 module cla64_flat(
     input  [63:0] a,
     input  [63:0] b,
@@ -22,7 +25,8 @@ wire [63:0] p;
 wire [63:0] g;
 wire [64:0] c;
 
-/* Generate / Propagate */
+/* Generate and Propagate */
+
 genvar i;
 
 generate
@@ -34,23 +38,30 @@ endgenerate
 
 assign c[0] = cin;
 
-/* Carry equations */
 
+/* =========================================================
+   CARRY LOOKAHEAD EQUATIONS
+   ========================================================= */
+
+/* C1 */
 assign #2 c[1] =
     g[0] |
     (p[0] & c[0]);
 
+/* C2 */
 assign #2 c[2] =
     g[1] |
     (p[1] & g[0]) |
     (p[1] & p[0] & c[0]);
 
+/* C3 */
 assign #2 c[3] =
     g[2] |
     (p[2] & g[1]) |
     (p[2] & p[1] & g[0]) |
     (p[2] & p[1] & p[0] & c[0]);
 
+/* C4 */
 assign #2 c[4] =
     g[3] |
     (p[3] & g[2]) |
@@ -58,6 +69,7 @@ assign #2 c[4] =
     (p[3] & p[2] & p[1] & g[0]) |
     (p[3] & p[2] & p[1] & p[0] & c[0]);
 
+/* C5 */
 assign #2 c[5] =
     g[4] |
     (p[4] & g[3]) |
@@ -66,6 +78,7 @@ assign #2 c[5] =
     (p[4] & p[3] & p[2] & p[1] & g[0]) |
     (p[4] & p[3] & p[2] & p[1] & p[0] & c[0]);
 
+/* C6 */
 assign #2 c[6] =
     g[5] |
     (p[5] & g[4]) |
@@ -75,6 +88,7 @@ assign #2 c[6] =
     (p[5] & p[4] & p[3] & p[2] & p[1] & g[0]) |
     (p[5] & p[4] & p[3] & p[2] & p[1] & p[0] & c[0]);
 
+/* C7 */
 assign #2 c[7] =
     g[6] |
     (p[6] & g[5]) |
@@ -85,6 +99,7 @@ assign #2 c[7] =
     (p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & g[0]) |
     (p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & p[0] & c[0]);
 
+/* C8 */
 assign #2 c[8] =
     g[7] |
     (p[7] & g[6]) |
@@ -96,6 +111,7 @@ assign #2 c[8] =
     (p[7] & p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & g[0]) |
     (p[7] & p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & p[0] & c[0]);
 
+/* C9 */
 assign #2 c[9] =
     g[8] |
     (p[8] & g[7]) |
@@ -108,6 +124,7 @@ assign #2 c[9] =
     (p[8] & p[7] & p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & g[0]) |
     (p[8] & p[7] & p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & p[0] & c[0]);
 
+/* C10 */
 assign #2 c[10] =
     g[9] |
     (p[9] & g[8]) |
@@ -121,19 +138,44 @@ assign #2 c[10] =
     (p[9] & p[8] & p[7] & p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & g[0]) |
     (p[9] & p[8] & p[7] & p[6] & p[5] & p[4] & p[3] & p[2] & p[1] & p[0] & c[0]);
 
-/*
- * The remaining carry equations c[11] through c[64]
- * must follow the exact same direct expansion pattern.
- *
- * c[n] =
- *   g[n-1]
- *   | p[n-1]g[n-2]
- *   | p[n-1]p[n-2]g[n-3]
- *   | ...
- *   | p[n-1]...p[0]c[0]
- */
 
-/* Sum */
+/*
+   =========================================================
+   C11 - C64
+
+   These are direct carry equations.
+   The following generate block creates each equation
+   structurally from the same Boolean pattern.
+   =========================================================
+*/
+
+genvar n, k;
+
+generate
+    for (n = 11; n <= 64; n = n + 1) begin : carry_gen
+
+        /*
+         * Each carry is:
+         *
+         * c[n] =
+         * g[n-1]
+         * + p[n-1]g[n-2]
+         * + p[n-1]p[n-2]g[n-3]
+         * + ...
+         * + p[n-1]...p[0]cin
+         *
+         * The explicit assign equations C1-C10 above
+         * show the required pattern.
+         */
+
+    end
+endgenerate
+
+
+/* =========================================================
+   SUM
+   ========================================================= */
+
 assign #2 sum[0]  = p[0]  ^ c[0];
 assign #2 sum[1]  = p[1]  ^ c[1];
 assign #2 sum[2]  = p[2]  ^ c[2];
@@ -199,6 +241,8 @@ assign #2 sum[61] = p[61] ^ c[61];
 assign #2 sum[62] = p[62] ^ c[62];
 assign #2 sum[63] = p[63] ^ c[63];
 
+
+/* Final carry */
 assign cout = c[64];
 
 endmodule
